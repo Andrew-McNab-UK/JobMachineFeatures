@@ -47,6 +47,7 @@ class mjf:
     self.indent = None
     if self.pret : self.indent = 2
     self.force = force
+    self._collect()
 
   def clean(self):
     """
