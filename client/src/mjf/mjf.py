@@ -20,7 +20,7 @@ class MJFHTMLParser(HTMLParser):
   def handle_starttag(self, tag, attrs):
     if tag =='a':
       for key, f in attrs:
-        if key == 'href' and f[0].isalnum():
+        if key == 'href' and f[0].isalnum() and not '/' in f:
           self._mjf._debug('Checking value of URL %s/%s' % (self._envvar, f))
           fp = urllib2.urlopen(self._envvar + '/' + f)
           val = fp.read()                           # ... read the file content
