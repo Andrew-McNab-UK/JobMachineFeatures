@@ -1,12 +1,33 @@
 #!/usr/bin/env python
 
 import os, socket, urllib2
+from HTMLParser import HTMLParser
 from datetime import datetime
 from optparse import OptionParser
 try: 
     import simplejson as json
 except ImportError:
     import json
+
+class MJFHTMLParser(HTMLParser):
+
+  def __init__(self, envvar, datakey, mjfObj):
+    HTMLParser.__init__(self)
+    self._envvar  = envvar
+    self._datakey = datakey
+    self._mjf     = mjfObj
+
+  def handle_starttag(self, tag, attrs):
+    if tag =='a':
+      for key, f in attrs:
+        if key == 'href' and f[0].isalnum():
+          self._mjf._debug('Checking value of URL %s/%s' % (self._envvar, f))
+          fp = urllib2.urlopen(self._envvar + '/' + f)
+          val = fp.read()                           # ... read the file content
+          self._mjf._debug('Value of file %s is %s' % (f,val))
+          fp.close()
+          if len(val) and val[-1] == '\n' : val = val[:-1]
+          self._mjf._addData(self._datakey, f, val)
 
 class MJFException(Exception): pass
 
@@ -47,6 +68,7 @@ class mjf:
     self.indent = None
     if self.pret : self.indent = 2
     self.force = force
+    self._collect()
 
   def clean(self):
     """
@@ -140,7 +162,13 @@ class mjf:
       self._debug('Looking for variable %s' % var)
       datakey = var.lower()
       envvar = os.environ[var]
-      if os.path.isdir(envvar) :
+      if envvar[:7] == 'http://' or envvar[:8] == 'https://':
+        self._debug('Collecting information from HTTP URL %s' % os.environ[var])
+        parser = MJFHTMLParser(envvar, datakey, self)
+        data = urllib2.urlopen(envvar).read()
+        parser.feed(data)
+        parser.close()  
+      elif os.path.isdir(envvar) :
         self._debug('Collecting information from directory %s' % os.environ[var])
         for f in os.listdir(envvar) :      # for each file in the machine/job features directory
           self._debug('Checking value of file %s in directory %s' % (f, envvar))
