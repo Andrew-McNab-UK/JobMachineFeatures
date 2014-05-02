@@ -68,7 +68,6 @@ class mjf:
     self.indent = None
     if self.pret : self.indent = 2
     self.force = force
-    self._collect()
 
   def clean(self):
     """
@@ -234,6 +233,7 @@ class mjf:
     else : self._message('ERROR', 'Cannot find job / machine features information on this node')
 
   def _run(self):
+    self._collect()
     self._print()
 
   
